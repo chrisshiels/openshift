@@ -13,6 +13,6 @@ copy requirements.txt ./
 run virtualenv /app/virtualenv && \
     /app/virtualenv/bin/pip install -r /app/requirements.txt
 
-copy date.py  ./
+copy date.py ./
 
 cmd /app/virtualenv/bin/gunicorn --workers 4 --bind 0.0.0.0:4000 date:app
