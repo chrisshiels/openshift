@@ -100,3 +100,21 @@
     host$ oc get imagestreamtag
     NAME         DOCKER REF                                                                                              UPDATED
     date:0.0.1   172.30.1.1:5000/project3/date@sha256:82f660dd932dbd0094427f99afc13e0da717d734159fc431c651acc2f66fe7a6   About a minute ago
+
+
+## OpenShift - ...
+
+    host$ oc new-app \
+            https://github.com/chrisshiels/openshift.git#feature/date \
+            --name date \
+            --strategy docker \
+            --context-dir date
+
+    ..
+    --> Creating resources ...
+        imagestream "centos" created
+        imagestream "date" created
+        buildconfig "date" created
+        deploymentconfig "date" created
+        service "date" created
+    ..
