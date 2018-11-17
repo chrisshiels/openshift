@@ -26,13 +26,22 @@
     (virtualenv) host$ # Build and run Docker image.
     (virtualenv) host$ docker build -t date:0.0.1 .
     (virtualenv) host$ docker run \
+        --rm \
         --name date.docker \
         -d \
-        -i -t \
         -p 4000:4000 \
         date:0.0.1
     (virtualenv) host$ curl http://localhost:4000/date
     (virtualenv) host$ docker rm -f date.docker
+
+
+    (virtualenv) host$ # Start registry.
+    (virtualenv) host$ docker run \
+        --name registry \
+        -d \
+        -p 5000:5000 \
+        --restart=always \
+        registry:2
 
 
     (virtualenv) host$ # Push to registry.
@@ -42,15 +51,18 @@
 
 ## OpenShift - ...
 
+    host$ oc login -u developer
+
     host$ oc new-project project1
     host$ oc new-app localhost:5000/date:0.0.1 \
-	--name date --insecure-registry
+        --name date --insecure-registry
     ..
     --> Creating resources ...
-        imagestream "date" created
-        deploymentconfig "date" created
+        imagestream.image.openshift.io "date" created
+        deploymentconfig.apps.openshift.io "date" created
         service "date" created
     ..
+
     host$ oc get imagestream
     NAME      DOCKER REPO                     TAGS      UPDATED
     date      172.30.1.1:5000/project1/date   0.0.1     13 seconds ago
@@ -58,10 +70,10 @@
     NAME         DOCKER REF                                                                                    UPDATED
     date:0.0.1   localhost:5000/date@sha256:82f660dd932dbd0094427f99afc13e0da717d734159fc431c651acc2f66fe7a6   15 seconds ago
 
-    host$ oc expose service/date
-    host$ curl http://date-project1.127.0.0.1.nip.io/date
+    host$ oc scale dc date --replicas 3
 
-    host$ oc scale dc/date --replicas 3
+    host$ oc expose service date
+    host$ curl http://date-project1.127.0.0.1.nip.io/date
 
 
 ## OpenShift - ...
@@ -104,6 +116,7 @@
 
 ## OpenShift - ...
 
+    host$ oc new-project project4
     host$ oc new-app \
             https://github.com/chrisshiels/openshift.git#feature/date \
             --name date \
@@ -112,9 +125,27 @@
 
     ..
     --> Creating resources ...
-        imagestream "centos" created
-        imagestream "date" created
-        buildconfig "date" created
-        deploymentconfig "date" created
+        imagestream.image.openshift.io "centos" created
+        imagestream.image.openshift.io "date" created
+        buildconfig.build.openshift.io "date" created
+        deploymentconfig.apps.openshift.io "date" created
         service "date" created
     ..
+
+    host$ oc logs -f date-1-build
+
+    host$ oc get imagestream
+    NAME      DOCKER REPO                       TAGS      UPDATED
+    centos    172.30.1.1:5000/project4/centos   7         4 minutes ago
+    date      172.30.1.1:5000/project4/date     latest    2 minutes ago
+    host$ oc get imagestreamtag
+    NAME          DOCKER REF                                                                                              UPDATED
+    centos:7      centos@sha256:dc29e2bcceac52af0f01300402f5e756cc8c44a310867f6b94f5f7271d4f3fec                          4 minutes ago
+    date:latest   172.30.1.1:5000/project4/date@sha256:674e6e9b0c4461a766be25a701c6ed784f4c258d1190921862bf593a9174afb7   2 minutes ago
+
+    host$ oc scale dc date --replicas 3
+
+    host$ oc expose service date
+    host$ curl http://date-project1.127.0.0.1.nip.io/date
+
+    host$ oc start-build date
